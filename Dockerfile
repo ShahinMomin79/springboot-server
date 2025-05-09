@@ -1,17 +1,16 @@
-# Build stage
 FROM eclipse-temurin:21-jdk as builder
 WORKDIR /app
-COPY . .
-RUN ./mvnw clean package -DskipTests
 
-# Runtime stage
-FROM eclipse-temurin:21-jre
-WORKDIR /app
+# 1. First copy ONLY the wrapper files
+COPY .mvn/ .mvn
+COPY mvnw ./
 
-# Copy the built JAR (verify your exact JAR name)
-COPY --from=builder /app/target/SpringbootWithReact-0.0.1-SNAPSHOT.jar app.jar
+# 2. Make mvnw executable BEFORE running it
+RUN chmod +x mvnw  # ← THIS IS CRITICAL
 
-# Critical for Railway
-EXPOSE 8080
-ENV PORT 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# 3. Then copy rest and build
+COPY pom.xml ./
+COPY src src
+RUN ./mvnw clean package -DskipTests  # Now it will work
+
+# ... rest of your Dockerfile ...
